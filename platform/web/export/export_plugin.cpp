@@ -161,11 +161,54 @@ void EditorExportPlatformWeb::_fix_html(Vector<uint8_t> &p_html, const Ref<Edito
 		head_include += "<link rel=\"manifest\" href=\"" + p_name + ".manifest.json\">\n";
 		config["serviceWorker"] = p_name + ".service.worker.js";
 	}
+	String discord_head_include;
+	if (p_preset->get("blazium/discord_embed/enabled")) {
+		discord_head_include += "<meta  name=\"discord_embed\" content=\"true\" />\n";
+		if (p_preset->get("blazium/discord_embed/autodetect")) {
+			discord_head_include += "<meta  name=\"discord_autodetect\" content=\"true\" />\n";
+		}
+	}
+
+	Dictionary embeds;
+	String web_headers;
+	if (p_preset->get("blazium/web_headers/enabled")) {
+		embeds["title"] = p_preset->get("blazium/web_headers/title");
+		embeds["description"] = p_preset->get("blazium/web_headers/description");
+		embeds["url"] = p_preset->get("blazium/web_headers/url");
+		embeds["image"] = p_preset->get("blazium/web_headers/image");
+		embeds["type"] = p_preset->get("blazium/web_headers/type");
+		embeds["site_name"] = p_preset->get("blazium/web_headers/site_name");
+		web_headers += "<meta  property=\"og:title\" content=\""+ embeds["title"] +"\" />\n";
+		web_headers += "<meta  property=\"og:description\" content=\""+ embeds["description"] +"\" />\n";
+		web_headers += "<meta  property=\"og:url\" content=\""+ embeds["url"] +"\" />\n";
+		web_headers += "<meta  property=\"og:image\" content=\""+ embeds["image"] +"\" />\n";
+		web_headers += "<meta  property=\"og:type\" content=\""+ embeds["type"] +"\" />\n";
+		web_headers += "<meta  property=\"og:site_name\" content=\""+ embeds["site_name"] +"\" />\n";
+	}
+	String social_headers;
+	if (p_preset->get("blazium/social_headers/enabled")) {
+		embeds["title"] = p_preset->get("blazium/social_headers/title");
+		embeds["description"] = p_preset->get("blazium/social_headers/description");
+		embeds["url"] = p_preset->get("blazium/social_headers/url");
+		embeds["image"] = p_preset->get("blazium/social_headers/image");
+		embeds["site"] = p_preset->get("blazium/social_headers/site");
+		embeds["card"] = p_preset->get("blazium/social_headers/card");
+		social_headers += "<meta  property=\"twitter:title\" content=\""+ embeds["title"] +"\" />\n";
+		social_headers += "<meta  property=\"twitter:description\" content=\""+ embeds["description"] +"\" />\n";
+		social_headers += "<meta  property=\"twitter:url\" content=\""+ embeds["url"] +"\" />\n";
+		social_headers += "<meta  property=\"twitter:image\" content=\""+ embeds["image"] +"\" />\n";
+		social_headers += "<meta  property=\"twitter:site\" content=\""+ embeds["site"] +"\" />\n";
+		social_headers += "<meta  property=\"twitter:card\" content=\""+ embeds["card"] +"\" />\n";
+		
+	}
 
 	// Replaces HTML string
 	const String str_config = Variant(config).to_json_string();
 	const String custom_head_include = p_preset->get("html/head_include");
 	HashMap<String, String> replaces;
+	replaces["$BLAZIUM_DISCORD_EMBEDDED_HEADERS"] = discord_head_include;
+	replaces["$BLAZIUM_WEB_EMBEDS"] = web_headers;
+	replaces["$BLAZIUM_SOCIAL_EMBEDS"] = social_headers;
 	replaces["$GODOT_URL"] = p_name + ".js";
 	replaces["$GODOT_PROJECT_NAME"] = GLOBAL_GET("application/config/name");
 	replaces["$GODOT_HEAD_INCLUDE"] = head_include + custom_head_include;
@@ -370,6 +413,12 @@ void EditorExportPlatformWeb::get_export_options(List<ExportOption> *r_options) 
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "progressive_web_app/icon_180x180", PROPERTY_HINT_FILE, "*.png,*.webp,*.svg"), ""));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "progressive_web_app/icon_512x512", PROPERTY_HINT_FILE, "*.png,*.webp,*.svg"), ""));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::COLOR, "progressive_web_app/background_color", PROPERTY_HINT_COLOR_NO_ALPHA), Color()));
+	
+	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "blazium/web_headers/enabled"), false));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "blazium/social_headers/enabled"), false));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "blazium/discord_embed/enabled"), false));
+
+
 }
 
 String EditorExportPlatformWeb::get_name() const {
